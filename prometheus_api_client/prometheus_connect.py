@@ -80,12 +80,13 @@ class PrometheusConnect:
             self._session.proxies = proxy
         self._session.mount(self.url, HTTPAdapter(max_retries=retry))
 
-    def check_prometheus_connection(self, params: dict = None) -> bool:
+    def check_prometheus_connection(self, params: dict = None, request_args: dict = None) -> bool:
         """
         Check Promethus connection.
 
         :param params: (dict) Optional dictionary containing parameters to be
             sent along with the API request.
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (bool) True if the endpoint can be reached, False if cannot be reached.
         """
         response = self._session.get(
@@ -94,31 +95,34 @@ class PrometheusConnect:
             headers=self.headers,
             params=params,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
         return response.ok
 
-    def all_metrics(self, params: dict = None):
+    def all_metrics(self, params: dict = None, request_args: dict = None):
         """
         Get the list of all the metrics that the prometheus host scrapes.
 
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "time"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (list) A list of names of all the metrics available from the
             specified prometheus host
         :raises:
             (RequestException) Raises an exception in case of a connection error
             (PrometheusApiClientException) Raises in case of non 200 response status code
         """
-        self._all_metrics = self.get_label_values(label_name="__name__", params=params)
+        self._all_metrics = self.get_label_values(label_name="__name__", params=params, **request_args)
         return self._all_metrics
 
-    def get_label_names(self, params: dict = None):
+    def get_label_names(self, params: dict = None, request_args: dict = None):
         """
         Get a list of all labels.
 
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "start", "end" or "match[]".
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (list) A list of labels from the specified prometheus host
         :raises:
             (RequestException) Raises an exception in case of a connection error
@@ -131,7 +135,8 @@ class PrometheusConnect:
             headers=self.headers,
             params=params,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
 
         if response.status_code == 200:
@@ -142,13 +147,14 @@ class PrometheusConnect:
             )
         return labels
 
-    def get_label_values(self, label_name: str, params: dict = None):
+    def get_label_values(self, label_name: str, params: dict = None, request_args: dict = None):
         """
         Get a list of all values for the label.
 
         :param label_name: (str) The name of the label for which you want to get all the values.
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "time"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (list) A list of names for the label from the specified prometheus host
         :raises:
             (RequestException) Raises an exception in case of a connection error
@@ -161,7 +167,8 @@ class PrometheusConnect:
             headers=self.headers,
             params=params,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
 
         if response.status_code == 200:
@@ -173,7 +180,7 @@ class PrometheusConnect:
         return labels
 
     def get_current_metric_value(
-        self, metric_name: str, label_config: dict = None, params: dict = None
+        self, metric_name: str, label_config: dict = None, params: dict = None, request_args: dict = None
     ):
         r"""
         Get the current metric value for the specified metric and label configuration.
@@ -183,6 +190,7 @@ class PrometheusConnect:
             values
         :param params: (dict) Optional dictionary containing GET parameters to be sent
             along with the API request, such as "time"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (list) A list of current metric values for the specified metric
         :raises:
             (RequestException) Raises an exception in case of a connection error
@@ -212,7 +220,8 @@ class PrometheusConnect:
             verify=self._session.verify,
             headers=self.headers,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
 
         if response.status_code == 200:
@@ -232,6 +241,7 @@ class PrometheusConnect:
         chunk_size: timedelta = None,
         store_locally: bool = False,
         params: dict = None,
+        request_args: dict = None,
     ):
         r"""
         Get the current metric value for the specified metric and label configuration.
@@ -248,6 +258,7 @@ class PrometheusConnect:
             `"./metrics/hostname/metric_date/name_time.json.bz2"`
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "time"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :return: (list) A list of metric data for the specified metric in the given time
             range
         :raises:
@@ -304,7 +315,8 @@ class PrometheusConnect:
                 verify=self._session.verify,
                 headers=self.headers,
                 auth=self.auth,
-                cert=self._session.cert
+                cert=self._session.cert,
+                **request_args
             )
             if response.status_code == 200:
                 data += response.json()["data"]["result"]
@@ -377,7 +389,7 @@ class PrometheusConnect:
         )
         return object_path
 
-    def custom_query(self, query: str, params: dict = None):
+    def custom_query(self, query: str, params: dict = None, request_args: dict = None):
         """
         Send a custom query to a Prometheus Host.
 
@@ -388,6 +400,7 @@ class PrometheusConnect:
             at https://prometheus.io/docs/prometheus/latest/querying/examples/
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "time"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (list) A list of metric data received in response of the query sent
         :raises:
             (RequestException) Raises an exception in case of a connection error
@@ -403,7 +416,8 @@ class PrometheusConnect:
             verify=self._session.verify,
             headers=self.headers,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
         if response.status_code == 200:
             data = response.json()["data"]["result"]
@@ -415,7 +429,7 @@ class PrometheusConnect:
         return data
 
     def custom_query_range(
-        self, query: str, start_time: datetime, end_time: datetime, step: str, params: dict = None
+        self, query: str, start_time: datetime, end_time: datetime, step: str, params: dict = None, request_args: dict = None
     ):
         """
         Send a query_range to a Prometheus Host.
@@ -430,6 +444,7 @@ class PrometheusConnect:
         :param step: (str) Query resolution step width in duration format or float number of seconds
         :param params: (dict) Optional dictionary containing GET parameters to be
             sent along with the API request, such as "timeout"
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (dict) A dict of metric data received in response of the query sent
         :raises:
             (RequestException) Raises an exception in case of a connection error
@@ -447,7 +462,8 @@ class PrometheusConnect:
             verify=self._session.verify,
             headers=self.headers,
             auth=self.auth,
-            cert=self._session.cert
+            cert=self._session.cert,
+            **request_args
         )
         if response.status_code == 200:
             data = response.json()["data"]["result"]
@@ -465,6 +481,7 @@ class PrometheusConnect:
         end_time: datetime = None,
         step: str = "15",
         params: dict = None,
+        request_args: dict = None,
     ):
         """
         Get aggregations on metric values received from PromQL query.
@@ -488,7 +505,7 @@ class PrometheusConnect:
           sent along with the API request, such as "timeout"
           Available operations - sum, max, min, variance, nth percentile, deviation
           and average.
-
+        :param request_args: (dict) Optional dictionary containing additional args for the GET request such a request 'timeout'
         :returns: (dict) A dict of aggregated values received in response to the operations
           performed on the values for the query sent.
 
@@ -509,14 +526,14 @@ class PrometheusConnect:
         query_values = []
         if start_time is not None and end_time is not None:
             data = self.custom_query_range(
-                query=query, params=params, start_time=start_time, end_time=end_time, step=step
+                query=query, params=params, start_time=start_time, end_time=end_time, step=step, **request_args
             )
             for result in data:
                 values = result["values"]
                 for val in values:
                     query_values.append(float(val[1]))
         else:
-            data = self.custom_query(query, params)
+            data = self.custom_query(query, params, **request_args)
             for result in data:
                 val = float(result["value"][1])
                 query_values.append(val)
